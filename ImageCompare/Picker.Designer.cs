@@ -37,10 +37,13 @@
 			this.LeftInfo = new System.Windows.Forms.Label();
 			this.RightInfo = new System.Windows.Forms.Label();
 			this.CenterInfo = new System.Windows.Forms.Label();
-			this.ProgressBar = new System.Windows.Forms.ProgressBar();
+			this.ProgressBarActive = new System.Windows.Forms.ProgressBar();
 			this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+			this.fileSystemWatcher1 = new System.IO.FileSystemWatcher();
+			this.ProgressBarPassive = new System.Windows.Forms.ProgressBar();
 			((System.ComponentModel.ISupportInitialize)(this.RightImage)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.LeftImage)).BeginInit();
+			((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// RightImage
@@ -48,7 +51,7 @@
 			this.RightImage.AccessibleName = "";
 			this.RightImage.Location = new System.Drawing.Point(403, 24);
 			this.RightImage.Name = "RightImage";
-			this.RightImage.Size = new System.Drawing.Size(385, 388);
+			this.RightImage.Size = new System.Drawing.Size(385, 359);
 			this.RightImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
 			this.RightImage.TabIndex = 0;
 			this.RightImage.TabStop = false;
@@ -57,7 +60,7 @@
 			// 
 			this.LeftImage.Location = new System.Drawing.Point(12, 24);
 			this.LeftImage.Name = "LeftImage";
-			this.LeftImage.Size = new System.Drawing.Size(385, 388);
+			this.LeftImage.Size = new System.Drawing.Size(385, 359);
 			this.LeftImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
 			this.LeftImage.TabIndex = 1;
 			this.LeftImage.TabStop = false;
@@ -130,21 +133,34 @@
 			this.CenterInfo.Text = "Center Info";
 			this.CenterInfo.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
 			// 
-			// ProgressBar
+			// ProgressBarActive
 			// 
-			this.ProgressBar.Location = new System.Drawing.Point(15, 418);
-			this.ProgressBar.Name = "ProgressBar";
-			this.ProgressBar.Size = new System.Drawing.Size(776, 45);
-			this.ProgressBar.TabIndex = 9;
-			this.ProgressBar.Visible = false;
+			this.ProgressBarActive.Location = new System.Drawing.Point(15, 418);
+			this.ProgressBarActive.Name = "ProgressBarActive";
+			this.ProgressBarActive.Size = new System.Drawing.Size(776, 45);
+			this.ProgressBarActive.TabIndex = 9;
+			this.ProgressBarActive.Visible = false;
+			// 
+			// fileSystemWatcher1
+			// 
+			this.fileSystemWatcher1.EnableRaisingEvents = true;
+			this.fileSystemWatcher1.SynchronizingObject = this;
+			// 
+			// ProgressBarPassive
+			// 
+			this.ProgressBarPassive.Location = new System.Drawing.Point(15, 389);
+			this.ProgressBarPassive.Name = "ProgressBarPassive";
+			this.ProgressBarPassive.Size = new System.Drawing.Size(773, 23);
+			this.ProgressBarPassive.TabIndex = 10;
 			// 
 			// Picker
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(800, 472);
+			this.Controls.Add(this.ProgressBarPassive);
 			this.Controls.Add(this.CenterInfo);
-			this.Controls.Add(this.ProgressBar);
+			this.Controls.Add(this.ProgressBarActive);
 			this.Controls.Add(this.RightInfo);
 			this.Controls.Add(this.LeftInfo);
 			this.Controls.Add(this.label2);
@@ -157,6 +173,7 @@
 			this.Text = "Form1";
 			((System.ComponentModel.ISupportInitialize)(this.RightImage)).EndInit();
 			((System.ComponentModel.ISupportInitialize)(this.LeftImage)).EndInit();
+			((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).EndInit();
 			this.ResumeLayout(false);
 
 		}
@@ -172,8 +189,10 @@
 		private System.Windows.Forms.Label RightInfo;
 		private System.Windows.Forms.Label CenterInfo;
 		private System.Windows.Forms.Button ButtonMatch;
-		private System.Windows.Forms.ProgressBar ProgressBar;
+		private System.Windows.Forms.ProgressBar ProgressBarActive;
 		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
+		private System.IO.FileSystemWatcher fileSystemWatcher1;
+		private System.Windows.Forms.ProgressBar ProgressBarPassive;
 	}
 }
 

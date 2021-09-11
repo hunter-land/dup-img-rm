@@ -120,11 +120,12 @@ namespace ImageCompare
 
 			Invoke((MethodInvoker)delegate {
 				CenterInfo.Text = "Loading select pixels from each image...";
-				ProgressBar.Visible = true;
+				ProgressBarActive.Visible = true;
 			});
 			GetRandomPatternPixels(); //Get color mapping for `AreDifferentFast` function
 			Invoke((MethodInvoker)delegate {
 				CenterInfo.Text = "Beginning comparison";
+				ProgressBarActive.Visible = false;
 			});
 
 			while (!finished)
@@ -194,8 +195,13 @@ namespace ImageCompare
 				{
 					//n*(n-1)/2 is total
 					//comparisons is current progress
+					int progress = (int)Math.Floor(ncomps / ((double)filePool.Count * (filePool.Count - 1) / 2) * 100);
+					if (filePool.Count == 1)
+					{
+						progress = 100;
+					}
 					Invoke((MethodInvoker)delegate {
-						ProgressBar.Value = (int)Math.Floor(ncomps / ((double)filePool.Count * (filePool.Count - 1) / 2) * 100);
+						ProgressBarPassive.Value = Math.Min(progress, 100);
 					});
 				}
 			}
@@ -204,7 +210,7 @@ namespace ImageCompare
 			finished = true;
 			Invoke((MethodInvoker)delegate {
 				CenterInfo.Text = "Finished";
-				ProgressBar.Value = 100;
+				ProgressBarPassive.Value = 100;
 			});
 		}
 
@@ -375,7 +381,7 @@ namespace ImageCompare
 
 				//Update progress bar
 				Invoke((MethodInvoker)delegate {
-					ProgressBar.Value = (int)Math.Floor((double)i / filePool.Count * 100);
+					ProgressBarActive.Value = (int)Math.Floor((double)i / filePool.Count * 100);
 				});
 			}
 			
@@ -445,8 +451,90 @@ namespace ImageCompare
 			//We account for this by expecting similiarity to be 1 for identically sized photos, and scaling down from 1 as resolution difference increases between the two
 			differ = (ratioDiff / similarity) >= 0.03125 || ratioDiff >= 0.1 || similarity < (1 - (1 - pixelRatio) * 0.1);
 
-			//We think images are similar, ask user to confirm
-			if (!differ)
+			//We think images are similar and they are same dimensions (we can compare them automatically)
+			if (!differ && dimensions[indexA].SequenceEqual(dimensions[indexB]))
+			{
+				//Load and show images
+				Image ImageA, ImageB;
+				try
+				{
+					ImageA = Image.FromFile(filePool[indexA]);
+					ImageB = Image.FromFile(filePool[indexB]);
+				}
+				catch (Exception e)
+				{
+					//Assume different since we do nothing when thats the case
+					return true;
+				}
+				Bitmap bitmapA = new Bitmap(ImageA);
+				Bitmap bitmapB = new Bitmap(ImageB);
+				long totalPixels = (dimensions[indexA][0] * dimensions[indexA][1]);
+				Invoke((MethodInvoker)delegate {
+					LeftImage.Image = ImageA;
+					RightImage.Image = ImageB;
+					LeftInfo.Text = Path.GetFileName(filePool[indexA]) + "\nRatio: " + ratioA + "\nRes: " + ImageA.Width + "x" + ImageA.Height;
+					RightInfo.Text = Path.GetFileName(filePool[indexB]) + "\nRatio: " + ratioB + "\nRes: " + ImageB.Width + "x" + ImageB.Height;
+					CenterInfo.Text = "Comparing pixel by pixel (0%)";
+					ProgressBarActive.Visible = true;
+				});
+
+				//Split up work to multiple threads
+				bool mismatchFound = false;
+				int threadcount = 4;
+				List<Thread> threads = new List<Thread>();
+				long pixelsCompared = 0;
+				for (int i = 0; i < threadcount; i++)
+				{
+					//Start thread
+					long startCol = i / threadcount * dimensions[indexA][0];
+					long endCol = (i + 1) / threadcount * dimensions[indexA][0];
+
+					Thread t = new Thread(new ThreadStart(() => {
+						for (long x = startCol; x < endCol && mismatchFound == false; x++)
+						{
+							for (long y = 0; y < dimensions[indexA][1] && mismatchFound == false; y++)
+							{
+								if (bitmapA.GetPixel((int)x, (int)y) != bitmapB.GetPixel((int)x, (int)y))
+								{
+									//No match, mismatch found
+									mismatchFound = true;
+								}
+								pixelsCompared++;
+							}
+						}
+					}));
+					t.Start();
+
+					threads.Add(t);
+				}
+				while (pixelsCompared < totalPixels && mismatchFound == false)
+				{
+					long progress = pixelsCompared * 100 / totalPixels;
+					Invoke((MethodInvoker)delegate {
+						CenterInfo.Text = "Comparing pixel by pixel (" + progress + "%)";
+						ProgressBarActive.Value = (int)progress;
+					});
+				}
+				//Either all threads are finished OR mismatch was found
+				//Join threads back together
+				for (int i = 0; i < threadcount; i++)
+				{
+					threads[i].Join();
+				}
+				
+
+				Invoke((MethodInvoker)delegate {
+					LeftImage.Image = null;
+					RightImage.Image = null;
+					LeftInfo.Text = "Wait...";
+					RightInfo.Text = "Wait...";
+					ProgressBarActive.Visible = false;
+				});
+
+				return mismatchFound;
+			}
+			//We think images are similar and they are different resolutions, ask user to confirm
+			else if (!differ)
 			{
 				//Users needs to be shown images
 				//Load and show (Hide progress bar)
@@ -466,7 +554,6 @@ namespace ImageCompare
 					RightImage.Image = ImageB;
 					LeftInfo.Text = Path.GetFileName(filePool[indexA]) + "\nRatio: " + ratioA + "\nRes: " + ImageA.Width + "x" + ImageA.Height;
 					RightInfo.Text = Path.GetFileName(filePool[indexB]) + "\nRatio: " + ratioB + "\nRes: " + ImageB.Width + "x" + ImageB.Height;
-					ProgressBar.Visible = false;
 				});
 
 				//Wait for user response
@@ -490,7 +577,6 @@ namespace ImageCompare
 					RightImage.Image = null;
 					LeftInfo.Text = "Wait...";
 					RightInfo.Text = "Wait...";
-					ProgressBar.Visible = true;
 				});
 			}
 
